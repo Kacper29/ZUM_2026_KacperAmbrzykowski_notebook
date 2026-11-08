@@ -98,32 +98,72 @@ Uzupełniaj sekcje w zadaniach podanych w nawiasach. Zastępuj teksty w nawiasac
 
 ## Informacje ogólne
 
-* Tytuł: [tytuł projektu]
-* Autor: [imię i nazwisko]
-* Modalność: [tekst, obraz, audio albo dane multimodalne]
-* Problem klasyfikacji: [co jest klasą, ile jest klas]
+- Tytuł: Klasyfikacja gatunków muzycznych nowych wykonawców.
+- Autor: Kacper Ambrzykowski.
+- Modalność: audio.
+- Zadanie: nadzorowana klasyfikacja jednolabelowa do ośmiu gatunków.
 
 ## Problem i pytanie eksperymentalne (Zadanie 1)
 
-[Jaki problem rozwiązujesz i co dokładnie chcesz sprawdzić.]
+Z około 30-sekundowego fragmentu muzyki przewidujemy jeden gatunek.
+Sprawdzimy, czy cechy z zamrożonego PANNs CNN14 poprawiają macro-F1 na nowych
+wykonawcach względem MFCC, chroma, centroidu widmowego i RMS oraz jaki jest koszt
+obliczeniowy tej zmiany. W obu wariantach użyjemy regresji logistycznej.
+Dodatkowo sprawdzimy, czy dołączenie odchylenia standardowego embeddingów okien
+pomaga względem samej średniej.
 
 ## Dane i licencja (Zadanie 1)
 
-[Źródło i link, licencja, sposób pobrania, liczba przykładów, lista klas, sposób oznaczenia etykiet, znane ograniczenia.]
+Dane pochodzą z [Free Music Archive](https://github.com/mdeff/fma) (Defferrard i in.,
+ISMIR 2017). Archiwa `fma_small.zip` oraz `fma_metadata.zip` są dostępne w sekcji
+Data w oficjalnym repozytorium. Pole `track.genre_top` dostarcza pojedynczej
+etykiety. Klasy to Electronic, Experimental, Folk, Hip-Hop, Instrumental,
+International, Pop i Rock.
+
+Surowy zbiór ma 8000 nagrań, po 1000 na klasę. Po audycie pozostało 7976 nagrań.
+Wykluczono 5 nagrań bez wpisu licencji, 6 pustych lub niedekodowalnych i 13 nagrań
+w związku z dokładnymi duplikatami sygnału, w tym z rozbieżnymi etykietami.
+Audyt obejmuje też rozkład klas, czasy po dekodowaniu, przykłady i kandydatów
+o powtarzających się tytułach. Dokładne hashe MP3 i PCM wykrywają identyczność.
+Podobieństwo po zmianie kodowania lub remasteringu pozostaje ograniczeniem.
+Pojedyncza etykieta upraszcza wielogatunkowość muzyki, a balans klas FMA Small
+nie odzwierciedla rozkładu gatunków w populacji.
+
+Metadane FMA są na CC BY 4.0. Dla nagrań obowiązują indywidualne licencje twórców.
+Notebook pokazuje zestawienie wpisów. Przegląd szczegółowych warunków pozostaje do
+domknięcia przed modelowaniem. Audio jest przechowywane lokalnie.
 
 ## Protokół (Zadanie 1)
 
-* Jednostka generalizacji: [na przykład recenzja, pacjent, mówca, nagranie źródłowe]
-* Podział: [metoda i uzasadnienie]
-* Metryka główna i pomocnicze: [z uzasadnieniem]
-* Seed: [wartość]
-* Final test: zamrożony w commicie z tagiem `task-1`, identyfikatory w `splits/`. Jeśli podział był później poprawiany, podaj commit poprawionej wersji i opisz zmianę w dzienniku zmian.
+- Jednostka generalizacji to wykonawca (`artist_id`). Oceniamy jakość na
+  wykonawcach niewidzianych podczas uczenia klasyfikatora.
+- Podział grupowy dąży do proporcji 70/15/15% i równoważy liczbę nagrań oraz
+  wykonawców w klasach. Wspólny wykonawca, znormalizowana nazwa, album lub dokładna
+  kopia audio wiążą nagrania w jedną grupę. Okna i augmentacje dziedziczą podział
+  utworu. Transformacje uczone dopasujemy na train, a warianty wybierzemy na
+  validation. Możliwe pokrycie z pretreningiem na AudioSet pozostaje ograniczeniem.
+- Główna metryka to macro-F1 z równą wagą gatunków. Raportujemy też accuracy,
+  precision, recall i F1 dla klas, macierz pomyłek oraz czasy ekstrakcji, uczenia
+  i predykcji.
+- Seed 42 rozstrzyga remisy kolejności grup. W eksperymentach zapisujemy seed
+  klasyfikatora, wersje bibliotek i użyty sprzęt.
+- Podział zamrażamy w commicie wskazanym przez `task-1`. Pliki
+  [train](splits/train_ids.csv), [validation](splits/validation_ids.csv) i
+  [final test](splits/test_ids.csv) zawierają identyfikatory utworów, grup
+  i wykonawców. Żaden model nie był uruchamiany na final test. Porównania do
+  Zadania 4 wykonujemy na validation.
 
-| Zbiór | Liczba przykładów | Liczba niezależnych jednostek |
-|---|---|---|
-| train | | |
-| validation | | |
-| final test | | |
+| Zbiór | Nagrania | Wykonawcy | Grupy powiązanych nagrań |
+| --- | ---: | ---: | ---: |
+| train | 5595 | 1614 | 1222 |
+| validation | 1189 | 344 | 266 |
+| final test | 1192 | 348 | 268 |
+
+Instrumental ma po 18 wykonawców w validation i final test, więc wynik tej
+klasy może silnie zależeć od kilku artystów. [Notebook audytu](notebooks/01_data_and_protocol.ipynb)
+pokazuje zapisane wyniki, odtwarzanie podziału i kontrolę rozłączności.
+Status roboczy w jego zapisanym wyniku pochodzi z chwili wykonania audytu.
+Wersję zamrożoną wyznaczają pliki CSV pod tagiem.
 
 ## Wyniki (Zadania 2 do 5)
 
@@ -148,7 +188,9 @@ Pełny zapis jest w `final_system.md`. [Krótkie uzasadnienie wyboru na podstawi
 
 ## Reprodukcja
 
-[Wersja Pythona, instalacja środowiska, pobranie danych, kolejność uruchamiania notebooków albo skryptów, sprzęt, przybliżony czas.]
+Notebook został wykonany lokalnie w Pythonie 3.14 i zawiera zapisane wyniki.
+Do ponownego wykonania potrzebne są metadane FMA oraz skrypty, manifest i raporty
+z [pełnej wersji projektu](https://github.com/Kacper29/ZUM_2026_KacperAmbrzykowski/tree/ae132d5c6f0125154c4347d90aada039fbc279dd).
 
 ## Ograniczenia
 
